@@ -71,6 +71,8 @@ PLUGGY_CLIENT_ID=your-client-id
 PLUGGY_CLIENT_SECRET=your-client-secret
 ```
 
+See [automatic bank synchronization](docs/automatic-bank-sync.md) to configure the minimum polling interval (including PSD2 four-access-per-day limits).
+
 ### Enable Banking — European banks (PSD2)
 
 See [balance selection](docs/enable-banking-balances.md) for the current-balance priority and its optional environment override.
