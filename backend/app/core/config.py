@@ -2,7 +2,7 @@ from functools import lru_cache
 from os import getenv
 from pathlib import Path
 
-from pydantic import SecretStr, model_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Use the same environment variable that systemd uses: https://systemd.io/CREDENTIALS/
@@ -43,6 +43,21 @@ class Settings(BaseSettings):
     enable_banking_private_key_file: str = ""  # path to PEM file; takes precedence
     enable_banking_api_url: str = "https://api.enablebanking.com"
     enable_banking_oauth_redirect_uri: str = ""  # empty derives from FRONTEND_URL
+
+    # Comma-separated BalanceStatus codes, most preferred first.
+    enable_banking_balance_priority: str = "XPCD,ITAV,ITBD,CLAV,CLBD,OPBD,OPAV"
+
+    @field_validator("enable_banking_balance_priority")
+    @classmethod
+    def validate_balance_priority(cls, value: str) -> str:
+        codes = [code.strip().upper() for code in value.split(",")]
+        valid = {
+            "CLAV", "CLBD", "FWAV", "INFO", "ITAV", "ITBD", "OPAV", "OPBD",
+            "OTHR", "PRCD", "VALU", "XPCD",
+        }
+        if not codes or any(code not in valid for code in codes) or len(set(codes)) != len(codes):
+            raise ValueError("Balance priority must contain unique, valid BalanceStatus codes")
+        return ",".join(codes)
 
     # SimpleFIN Bridge (US/intl banks, paste-a-token flow). Off by default.
     # The bridge URL defaults to the beta/sandbox host so users can test with
