@@ -2,7 +2,8 @@ from functools import lru_cache
 from os import getenv
 from pathlib import Path
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import SecretStr, model_validator
+from pydantic.fields import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Use the same environment variable that systemd uses: https://systemd.io/CREDENTIALS/
