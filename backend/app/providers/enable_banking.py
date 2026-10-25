@@ -466,7 +466,12 @@ class EnableBankingProvider(BankProvider):
         for raw_acc in accounts_raw:
             if isinstance(raw_acc, str):
                 continue  # restricted clients can return account IDs as strings
-            accounts.append(await self._build_account(raw_acc))
+            try:
+                accounts.append(await self._build_account(raw_acc))
+            except httpx.HTTPError:
+                logger.warning("Skipping an account whose initial balance could not be read")
+        if not accounts and any(isinstance(raw, dict) for raw in accounts_raw):
+            raise RuntimeError("Enable Banking could not read any linked account")
 
         encrypted_session = encrypt(session_id) or session_id
         credentials: dict[str, Any] = {
@@ -592,17 +597,15 @@ class EnableBankingProvider(BankProvider):
         for uid in uids:
             try:
                 details = await self._request("GET", f"/accounts/{uid}/details")
+                account = await self._build_account(details, stable_external_ids.get(uid))
             except httpx.HTTPError as exc:
-                # A *transient* per-account failure. Without details we can't
-                # safely name/type the account, and a bare-uid AccountData would
-                # overwrite the stored name with a placeholder. Skip this account
-                # for this run (non-destructive: the existing row and its
-                # transactions are left intact and the next sync retries) rather
-                # than corrupt it. SessionExpiredError is deliberately NOT caught
-                # here: a dead consent is global, never per-account.
-                logger.warning("Failed to fetch details for account %s: %s", uid, exc)
+                # A transient details/balance failure skips only this account:
+                # never overwrite its stored name/balance with placeholder data.
+                # SessionExpiredError and ProviderRateLimited are deliberately
+                # NOT caught: consent loss/throttling affects the whole read.
+                logger.warning("Failed to fetch account data for account %s: %s", uid, exc)
                 continue
-            result.append(await self._build_account(details, stable_external_ids.get(uid)))
+            result.append(account)
         if not result:
             # Do not stamp last_sync_at when every account read failed. This
             # uses sync's existing error/rollback path, not a claim of expiry:
