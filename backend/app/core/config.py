@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from math import isfinite
 from os import getenv
@@ -125,6 +126,10 @@ class Settings(BaseSettings):
     def validate_bank_sync_interval(self):
         if not isfinite(self.bank_sync_min_interval_hours) or self.bank_sync_min_interval_hours <= 0:
             raise ValueError("BANK_SYNC_MIN_INTERVAL_HOURS must be finite and positive")
+        try:
+            datetime.now(timezone.utc) - timedelta(hours=self.bank_sync_min_interval_hours)
+        except OverflowError as exc:
+            raise ValueError("BANK_SYNC_MIN_INTERVAL_HOURS exceeds the supported date range") from exc
         return self
 
     # Reverse-proxy trust for client-IP-based rate limiting. 0 (default) means

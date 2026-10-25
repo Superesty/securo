@@ -3,8 +3,9 @@
 `BANK_SYNC_MIN_INTERVAL_HOURS` controls how old the last successful bank sync
 must be before a connection is eligible for automatic synchronization.
 The default is **4 hours**, preserving the previous behavior. Any finite,
-positive number of hours is accepted; zero, negative values and non-finite
-numbers fail startup validation.
+positive number of hours within Python's supported date range is accepted;
+zero, negative/non-finite values and intervals that overflow the sync cutoff
+fail startup validation.
 
 Celery beat still checks hourly. Connections with no previous successful sync
 remain eligible, and manual/on-demand synchronization is unchanged. A connection
