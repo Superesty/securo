@@ -18,7 +18,8 @@ from app.providers.enable_banking import _pick_balance
     (["OPAV"], "OPAV"),
     (["INFO", "OTHR"], "INFO"),
 ])
-def test_default_balance_priority(codes, expected):
+def test_default_balance_priority(codes, expected, monkeypatch):
+    monkeypatch.delenv("ENABLE_BANKING_BALANCE_PRIORITY", raising=False)
     settings = Settings(_env_file=None, _secrets_dir=None)
     balances = [{"balance_type": code} for code in codes]
     with patch("app.providers.enable_banking.get_settings", return_value=settings):
