@@ -23,7 +23,7 @@ def test_interval_from_environment(monkeypatch, value):
     assert Settings(_env_file=None, _secrets_dir=None).bank_sync_min_interval_hours == float(value)
 
 
-@pytest.mark.parametrize("value", ["0", "-1", "nan", "inf", "-inf", "invalid"])
+@pytest.mark.parametrize("value", ["0", "-1", "nan", "inf", "-inf", "invalid", "1e12", "1e8"])
 def test_invalid_intervals_rejected(monkeypatch, value):
     monkeypatch.setenv("BANK_SYNC_MIN_INTERVAL_HOURS", value)
     with pytest.raises(ValidationError):
